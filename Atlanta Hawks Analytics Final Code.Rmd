@@ -1,0 +1,137 @@
+---
+title: "ATL Hawks Analytics Final Code"
+author: "Michael Lewis-Wedderburn"
+date: "2023-06-04"
+output: pdf_document
+---
+
+```{r}
+
+library("dplyr") #Using dplyr library to use other functions
+
+```
+
+
+This reads the entire CSV file and attaches it's features.
+
+```{r}
+
+NBA <- read.csv("nbaplayersdraft.csv")
+View(NBA) 
+attach(NBA) #Allows the use of the features in the csv file
+```
+
+This filters the entire data set to become all players who went to Duke
+and were drafted in or before the 2000 draft.
+
+```{r}
+
+NBA2 <- subset(NBA, college == "Duke" & year <= 2000) #Filters a new dataset
+#View(NBA2)
+NBA2 %>% count(team)
+
+```
+
+This filters the entire data set to become all players who have a first
+name that begins with D and were drafted in an even year draft.
+
+```{r}
+
+NBA3 <- subset(NBA, year %% 2 == 0) 
+NBA3 <- NBA3 %>% filter(startsWith(player, "D")) #Filters a new dataset
+#View(NBA3)
+NBA3 %>% count(team)
+
+```
+
+This filters every team's first round pick selections and plots them in
+one graph.
+
+```{r}
+
+#For loop creates 38 separate scatterplots for each team's FR picks
+for (team_name in unique(NBA$team)) {
+  
+  FRP <- subset(NBA, team == team_name & overall_pick <= 30)
+  FRP_plot <- plot(FRP$overall_pick ~ FRP$year, main = team_name)
+  
+}
+
+```
+
+This generates the expected Value Over Return for each draft pick possible.
+```{r}
+
+#For loop assigns draft value for picks 1-60 based on E(VOR) formula
+for (pick in 1:60) {
+  
+  Draft_Value = 21.930875 - 5.414771 * log(pick)
+  print(paste("Value of Pick", pick, ":", Draft_Value))
+
+}
+
+```
+
+This finds the total VOR for each NBA team and puts it into a dataframe to 
+compare performance. 
+```{r}
+
+#Lists used to create dataframe
+total_list = list()
+NBA_team_list = list()
+
+#For loop generates total VOR for each team and assigns them to their 
+#respective lists
+for (team_name2 in unique(NBA$team)) {
+  
+  NBA_VOR <- subset(NBA, team == team_name2)
+  total_vor <- sum(NBA_VOR$value_over_replacement, na.rm=TRUE)
+  #print(paste("Total VOR for", team_name2, ":", total_vor))
+  total_list[[length(total_list) + 1]] = total_vor
+  NBA_team_list[[length(NBA_team_list) + 1]] = team_name2
+  
+}
+
+#Creates dataframe to show the value of Total VOR for each team
+NBA_VOR_df <- data.frame(total_list)
+colnames(NBA_VOR_df) <- paste0(NBA_team_list)    
+head(sort(NBA_VOR_df, decreasing=TRUE))
+
+
+```
+
+This finds the average VOR for each college team and puts it into a dataframe to 
+compare performance. 
+```{r}
+
+#Lists used to create dataframe
+avg_list = list()
+college_team_list = list()
+
+#For loop generates average VOR for each team and assigns them to their 
+#respective lists
+for (team_name3 in unique(NBA$college)) {
+  
+  NCAA_VOR <- subset(NBA, college == team_name3)
+  avg_vor <- mean(NCAA_VOR$value_over_replacement, na.rm=TRUE)
+  #print(paste("Total VOR for", team_name3, ":", avg_vor))
+  avg_list[[length(avg_list) + 1]] = avg_vor
+  college_team_list[[length(college_team_list) + 1]] = team_name3
+}
+
+#Creates dataframe to show the value of Average VOR for each team
+NCAA_VOR_df <- data.frame(avg_list)
+colnames(NCAA_VOR_df) <- paste0(college_team_list)    
+head(sort(NCAA_VOR_df, decreasing=TRUE))
+
+
+```
+
+References:
+<https://www.digitalocean.com/community/tutorials/r-read-csv-file-into-data-frame>
+<https://dplyr.tidyverse.org/reference/count.html>
+<https://stackoverflow.com/questions/43227088/how-can-i-apply-dplyrs-select-starts-with-on-rows-not-columns>
+<https://stackoverflow.com/questions/19761899/unique-values-in-each-of-the-columns-of-a-data-frame>
+<https://nycdatascience.com/blog/student-works/data-analysis-on-the-value-of-an-nba-draft-pick/>
+<https://www.bruinsportsanalytics.com/post/nba_first_round>
+<https://www.projectpro.io/recipes/append-output-from-for-loop-list-r>
